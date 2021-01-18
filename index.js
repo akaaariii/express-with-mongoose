@@ -31,6 +31,13 @@ app.get('/', async(req, res) => {
 app.use('/api/members', memberRoute);
 
 
+// catch all error middleware
+app.use((err, req, res, next) => {
+  const { status = 500, message = 'Something went wrong'} = err;
+  res.status(status).send(message);
+});
+
+
 mongoose
   .connect("mongodb://127.0.0.1:27017/member_manager", {
     useNewUrlParser: true,

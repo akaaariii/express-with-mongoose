@@ -1,45 +1,52 @@
 const Member = require('../model/members.model');
+const AppError = require('../util/AppError');
 
-
-exports.getAllMember = async(req, res) => {
-  const members = await Member.find({});
-  res.json({ members });
+function wrapAsync(fn){
+  return function(req, res, next){
+    fn(req, res, next).catch(err => next(err))
+  }
 }
 
-exports.getOneMember = async(req, res) => {
+exports.getAllMember = wrapAsync(async(req, res, next) => {
+  const members = await Member.find({});
+  if(!members){
+    throw new AppError('Members Not Found', 404);
+  }
+  res.json({ members });
+})
+
+exports.getOneMember = wrapAsync(async(req, res, next) => {
   const { id } = req.params;
   const member = await Member.findById(id);
   if (!member) {
-    res.status(400).json({ msg: `No member with the id of ${req.params.id} found`});
-    return
+    throw new AppError('Member Not Found', 400);
   }
   res.json({ member });
-}
+})
 
-exports.createMember = async(req, res) => {
+exports.createMember = wrapAsync(async(req, res, next) => {
   const newMember = new Member({
     ...req.body,
     status: 'active'
   })
   const result = await newMember.save();
   res.json({ result })
-}
+})
 
-exports.updateMember = async(req, res) => {
+exports.updateMember = wrapAsync(async(req, res, next) => {
   const { id } = req.params;
   const result = await Member.findByIdAndUpdate(id, req.body, { runValidators: true, new: true });
   if (!result) {
-    res.status(400).json({ msg: `No member with the id of ${req.params.id} found`});
-    return
+    throw new AppError('Member Not Found', 400);
   }
   res.json({ result });
-}
+})
 
-exports.deleteMember = async(req, res) => {
+exports.deleteMember = wrapAsync(async(req, res, next) => {
   const { id } = req.params;
   const result = await Member.findByIdAndDelete(id);
   if (!result) {
-    res.status(400).json({ msg: `No member with the id of ${req.params.id} found`});
+    throw new AppError('Member Not Found', 400);
   }
   res.json({ result });
-}
+})
