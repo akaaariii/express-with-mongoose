@@ -1,7 +1,8 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-const methodOverride = require('method-override');
+
+const AppError = require('./util/AppError');
 
 
 //Model
@@ -13,8 +14,6 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(methodOverride('_method'));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -30,6 +29,16 @@ app.get('/', async(req, res) => {
 //members routes
 app.use('/api/members', memberRoute);
 
+
+const handleValidationErr = err => {
+  return new AppError(`Validation Failed... ${err.message}`, 400);
+}
+
+//single out the particular Mongoose Error type
+app.use((err, req, res, next) => {
+  if(err.name === 'ValidationError') err = handleValidationErr(err)
+  next(err);
+});
 
 // catch all error middleware
 app.use((err, req, res, next) => {
